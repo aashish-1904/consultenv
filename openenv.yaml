@@ -1,0 +1,20 @@
+name: consultenv
+description: "End-to-end consulting engagement planning and execution environment. Agent staffs teams, selects methodologies, manages budgets/timelines, and delivers client work across 4 progressively harder consulting scenarios."
+version: "1.0.0"
+tasks:
+  - id: benchmarking_study
+    name: "Benchmarking Study"
+    description: "Benchmark procurement costs for a hospital chain and identify $20M+ savings. 4 modules, 15-day timeline."
+    difficulty: easy
+  - id: cost_optimization
+    name: "Cost Optimization"
+    description: "Identify $30M+ operational cost reduction for a chemicals manufacturer. 6 modules, 25-day timeline, discovery mechanic."
+    difficulty: medium
+  - id: ops_transformation
+    name: "Operational Transformation"
+    description: "Design digital transformation roadmap with stakeholder alignment. 7 modules incl. workshop, 35-day timeline, agile coach needed."
+    difficulty: hard
+  - id: commercial_due_diligence
+    name: "Commercial Due Diligence"
+    description: "Validate acquisition target for PE fund. 7 modules, 30-day timeline, industry expert + agile coach required, tight margins."
+    difficulty: hard
