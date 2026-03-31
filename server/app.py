@@ -1,85 +1,93 @@
-"""ConsultEnv FastAPI Server — OpenEnv HTTP API."""
+"""FastAPI application for the ConsultEnv Environment."""
 
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import json
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
-import uvicorn
+try:
+    from openenv.core.env_server.http_server import create_app
+except Exception as e:
+    raise ImportError(
+        "openenv is required. Install with: pip install openenv-core[core]>=0.2.2"
+    ) from e
 
-from models import ConsultAction, ConsultObservation, ConsultState
-from server.environment import ConsultEnvironment
+try:
+    from ..models import ConsultAction, ConsultObservation
+    from .consultenv_environment import ConsultEnvEnvironment
+except (ImportError, ModuleNotFoundError):
+    from models import ConsultAction, ConsultObservation
+    from server.consultenv_environment import ConsultEnvEnvironment
 
-app = FastAPI(
-    title="ConsultEnv",
-    description="OpenEnv-compliant consulting engagement planning environment",
-    version="1.0.0",
+
+app = create_app(
+    ConsultEnvEnvironment,
+    ConsultAction,
+    ConsultObservation,
+    env_name="consultenv",
+    max_concurrent_envs=1,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Override /reset to handle empty body (the validator sends POST /reset with no body)
+from fastapi import Request, HTTPException
 
-# Global environment instance
-env = ConsultEnvironment()
+# Remove the existing /reset route that create_app added
+app.routes[:] = [r for r in app.routes if not (hasattr(r, 'path') and r.path == '/reset' and hasattr(r, 'methods') and 'POST' in r.methods)]
 
-
-class ResetRequest(BaseModel):
-    scenario_id: str
-    seed: Optional[int] = None
-
-
-class StepRequest(BaseModel):
-    action: ConsultAction
-
-
-@app.get("/")
-async def root():
-    return {
-        "name": "consultenv",
-        "version": "1.0.0",
-        "status": "running",
-        "tasks": ["benchmarking_study", "cost_optimization", "ops_transformation", "commercial_due_diligence"],
-    }
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
+_env_instance = ConsultEnvEnvironment()
 
 @app.post("/reset")
-async def reset(request: ResetRequest) -> dict:
+async def reset_override(request: Request):
     try:
-        obs = env.reset(scenario_id=request.scenario_id, seed=request.seed)
+        body_bytes = await request.body()
+        body = json.loads(body_bytes) if body_bytes and body_bytes.strip() else {}
+    except Exception:
+        body = {}
+    try:
+        scenario_id = body.get("scenario_id") or body.get("task_id") or None
+        seed = body.get("seed")
+        obs = _env_instance.reset(scenario_id=scenario_id, seed=seed)
         return obs.model_dump()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
-@app.post("/step")
-async def step(request: StepRequest) -> dict:
+@app.get("/reset")
+async def reset_get():
     try:
-        obs = env.step(request.action)
+        obs = _env_instance.reset()
+        return obs.model_dump()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Also override /step to use the same instance
+@app.post("/step")
+async def step_override(request: Request):
+    try:
+        body_bytes = await request.body()
+        body = json.loads(body_bytes) if body_bytes and body_bytes.strip() else {}
+    except Exception:
+        raise HTTPException(status_code=400, detail="Request body required for /step")
+    try:
+        action_data = body.get("action", body)
+        action = ConsultAction(
+            action_type=action_data.get("action_type", ""),
+            parameters=action_data.get("parameters", {}),
+        )
+        obs = _env_instance.step(action)
         return obs.model_dump()
     except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
 @app.get("/state")
-async def state() -> dict:
+async def state_override():
     try:
-        s = env.state()
-        return s.model_dump()
-    except RuntimeError as e:
+        s = _env_instance.get_consult_state()
+        return s.model_dump() if hasattr(s, 'model_dump') else s.__dict__
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
+def main(host: str = "0.0.0.0", port: int = 8000):
+    import uvicorn
+    uvicorn.run(app, host=host, port=port)
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    main()

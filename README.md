@@ -1,3 +1,15 @@
+---
+title: ConsultEnv
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+tags:
+  - openenv
+pinned: false
+---
+
 # ConsultEnv — Consulting Engagement Planning Environment
 
 An OpenEnv-compliant reinforcement learning environment that simulates end-to-end consulting engagement management. An AI agent staffs teams, selects methodologies and tools, manages budgets and timelines, and delivers client work — with every decision producing deterministic outcomes scored on quality, profitability, and timeliness.
@@ -26,7 +38,7 @@ Real consulting engagement planning requires:
 - **Hidden information**: Discovery mechanics reward agents that invest in deep investigation
 - **Cascading consequences**: One bad early decision ripples through the entire project
 
-Firms are actively exploring AI for project planning and resource optimization. An agent that masters ConsultEnv would provide genuine commercial value.
+This isn't a game or toy — firms are actively exploring AI for project planning and resource optimization. An agent that masters ConsultEnv would provide genuine commercial value.
 
 ### Domain mechanics at a glance
 
@@ -57,14 +69,21 @@ Firms are actively exploring AI for project planning and resource optimization. 
 
 ### What makes each task harder?
 
-**Easy — Benchmarking Study**: HealthFirst's procurement costs are reportedly 15% above industry average. The CFO wants hard numbers and a prioritized list of savings levers before the next board meeting. Speed and data accuracy are the priorities.
+**Easy — Benchmarking Study**: Simple team (Partner + Manager + Associate). Four modules in a straight line. Low quality thresholds. 10 out of 12 strategies pass. The main decision is which data source to use.
 
-**Medium — Cost Optimization**: NovaChem's EBITDA margins have declined from 18% to 13% over 3 years. PE ownership is pushing for a cost transformation. A previous cost-cutting attempt failed — cuts were reversed within 6 months because they impacted production quality.
+**Medium — Cost Optimization**: Now the agent must choose between 5 optional roles, manage 6 modules with parallel tracks (benchmarking and data modelling can run in either order), and decide interview depth. A discovery mechanic rewards investing in senior interviews (+0.10 bonus). Smart tool choices (alteryx, ai_assisted insights) differentiate top scores.
 
-**Hard — Ops Transformation**: TerraLogistics is under pressure to modernize its operations. Five department heads have competing priorities and the CEO needs a roadmap everyone can align on. Stakeholder buy-in through workshops is more important than the analysis itself.
+**Hard — Ops Transformation**: The workshop module has a 0.90 quality threshold and is fully isolated from team multipliers — only an Agile Coach (+0.25) or Industry Expert (+0.30) can boost it. But the Expert costs $200K over the engagement and busts the budget. The agent must discover that the Coach (a per-day workshop hire at $6,500/day) is the cost-effective solution. Workshop base time is 11.25 days (1.5× normal), making timeline management critical. Only 1 out of 11 tested strategies passes all thresholds.
 
-**Expert — Commercial Due Diligence**: Meridian Capital needs to validate the management case for AquaPure Technologies ($180M revenue, 25% market share). Asking price is $320M at 6.4x EBITDA. Exclusivity expires in 5 weeks and a previous deal fell through due to missed risks in CDD.
+**Expert — Commercial Due Diligence**: Workshop threshold rises to 0.95 — neither the Coach alone (0.840 after cascade) nor the Expert alone (0.896 after cascade) can pass. The agent must discover that BOTH are needed simultaneously (Expert's +0.30 specialist + Coach's +0.25 facilitator = 1.05 raw → passes easily). But hiring the full Expert team costs $1.02M out of a $1.27M budget, leaving only $247K for tools, interviews, and the Coach. Margin ends up razor-thin at 14%. Only 2 out of 9 strategies pass.
 
+### Grader properties
+
+- **Deterministic**: Same action sequence always produces the same score. No randomness.
+- **Granular**: Scores range from -0.5 (budget bust) to ~1.9 (optimal), not binary pass/fail.
+- **Partial credit**: Every step provides a reward signal — not just end-of-episode.
+- **Validated**: 45 integration tests verify all mechanics, edge cases, and penalty behaviors.
+- **Score spread**: Easy 0.70 spread, Medium 1.41, Hard 1.14, Expert 1.08 — strong differentiation.
 
 ### Stress testing
 
@@ -301,6 +320,7 @@ python test_integration.py
 
 ## Novel Mechanics
 
+### Novel mechanics not seen in other OpenEnv environments
 
 | Mechanic | Description | Why it matters |
 |----------|------------|----------------|
@@ -318,6 +338,27 @@ python test_integration.py
 | **Dynamic QC boost** | QC gives bigger boost to weaker modules, diminishing returns on strong ones | Rewards strategic QC placement |
 | **Single-specialty roles** | Each team member has exactly one speed and one quality specialist module | No generalist team composition — targeted hiring matters |
 
+### Domain originality
+
+No existing OpenEnv environment covers consulting or professional services. This fills a genuine gap — consulting engagement planning sits at the intersection of resource optimization, project management, and stakeholder delivery, making it both commercially relevant and intellectually rich.
 
 ---
 
+## Baseline Scores
+
+Scores from `demo_run.py` using hardcoded near-optimal strategies:
+
+| Task | Score | Margin | Timeline | Discovery | Strategy |
+|------|-------|--------|----------|-----------|----------|
+| Benchmarking (Easy) | 1.626 | 46.2% | 15.0/15d | — | P+M+Ass, ibisworld |
+| Cost Optimization (Medium) | 1.824 | 35.5% | 24.1/25d | ✓ (+0.10) | P+M+AC+Ass, alteryx, AI insight |
+| Ops Transform (Hard) | 0.952 | 25.3% | 38.7/35d | — | P+M+AC+Ass, Coach+QC workshop |
+| CDD (Expert) | 1.373 | 14.0% | 32.9/30d | ✓ (+0.20) | P+M+E+C+AC+Ass, Coach workshop |
+
+Note: Hard and Expert scores are penalized by timeline overruns (-0.5 and -0.2 respectively). An optimal agent using speed-boosting tools (alteryx, ai_assisted) could reduce overruns and push scores higher.
+
+---
+
+## License
+
+MIT

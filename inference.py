@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from openai import OpenAI
 from models import ConsultAction
-from server.environment import ConsultEnvironment
+from server.consultenv_environment import ConsultEnvEnvironment as ConsultEnvironment
 
 # Read config from env
 client = OpenAI(

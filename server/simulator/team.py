@@ -72,13 +72,14 @@ def get_role_infos():
         if r["qual_spec_mod"]:
             desc_parts.append(f"Quality specialist: {r['qual_spec_mod']} ({r['qual_spec_val']:+.0%})")
         infos.append(RoleInfo(
-            name=name, rate_per_day=r["rate"],
+            name=name,
+            billing_rate=r["rate"],
             speed_overall=r["speed_overall"],
-            speed_spec_module=r["speed_spec_mod"],
-            speed_spec_value=r["speed_spec_val"],
+            speed_specialty=r["speed_spec_mod"],
+            speed_specialty_value=r["speed_spec_val"],
             quality_overall=r["qual_overall"],
-            quality_spec_module=r["qual_spec_mod"],
-            quality_spec_value=r["qual_spec_val"],
+            quality_specialty=r["qual_spec_mod"],
+            quality_specialty_value=r["qual_spec_val"],
             description=". ".join(desc_parts),
         ))
     return infos

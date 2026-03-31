@@ -11,7 +11,7 @@ Usage:
 import sys, os, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from server.environment import ConsultEnvironment
+from server.consultenv_environment import ConsultEnvEnvironment as ConsultEnvironment
 from models import ConsultAction
 
 # ═══════════════════════════════════════════════════════════════
@@ -148,7 +148,7 @@ def run_demo(scenario_id):
         print_observation(obs, f"STEP {i+1}: {module}")
     
     # Print final state
-    state = env.state()
+    state = env.get_consult_state()
     print(f"\n  FINAL STATE:")
     print(f"  Completed: {state.completed_modules}")
     print(f"  Qualities: {state.module_qualities}")
@@ -185,7 +185,7 @@ def run_demo_http(scenario_id, base_url="http://localhost:7860"):
     resp = requests.post(f"{base_url}/reset", json={"scenario_id": scenario_id})
     obs = resp.json()
     print(f"\n  Scenario: {obs['scenario']['name']}")
-    print(f"  Budget: ${obs['scenario']['budget']:,} | Timeline: {obs['scenario']['timeline_days']}d")
+    print(f"  Budget: ${obs['scenario']['budget']:,} | Timeline: {obs['scenario']["timeline_days"]}d")
     
     # Staff team
     resp = requests.post(f"{base_url}/step", json={

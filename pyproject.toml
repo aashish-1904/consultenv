@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-consultenv"
+version = "1.0.0"
+description = "OpenEnv-compliant consulting engagement planning environment. Agent staffs teams, selects methodologies, manages budgets/timelines across 4 progressively harder scenarios."
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core[core]>=0.2.2",
+    "openai",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+server = "consultenv.server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["consultenv", "consultenv.server"]
+package-dir = { "consultenv" = ".", "consultenv.server" = "server" }

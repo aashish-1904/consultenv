@@ -1,37 +1,66 @@
 """ConsultEnv — Main Environment Class implementing OpenEnv spec."""
 
 import copy
-from models import (
-    ConsultAction, ConsultObservation, ConsultState,
-    ScenarioSpec, ResourceUsage, ModuleOutput, StepResult,
-    TeamComposition, RoleInfo, ModuleInfo,
-)
-from server.tasks.scenarios import SCENARIOS
-from server.simulator.team import (
-    ROLES, OPTIONAL_ROLES, compute_team_cost,
-    compute_speed_multiplier, compute_quality_boost, get_role_infos,
-)
-from server.simulator.transition import execute_module, MODULES_BASE
-from server.simulator.cascade import DEPENDENCIES
-from server.rewards.step_reward import compute_step_reward
-from server.rewards.terminal_reward import compute_terminal_reward
-from server.tasks.outputs import get_output
+from uuid import uuid4
+
+from openenv.core.env_server.interfaces import Environment
+from openenv.core.env_server.types import State
+
+try:
+    from ..models import (
+        ConsultAction, ConsultObservation, ConsultState,
+        ScenarioSpec, ResourceUsage, ModuleOutput, StepRecord,
+        TeamComposition, RoleInfo, ModuleInfo,
+    )
+    from .tasks.scenarios import SCENARIOS
+    from .simulator.team import (
+        ROLES, OPTIONAL_ROLES, compute_team_cost,
+        compute_speed_multiplier, compute_quality_boost, get_role_infos,
+    )
+    from .simulator.transition import execute_module, MODULES_BASE
+    from .simulator.cascade import DEPENDENCIES
+    from .rewards.step_reward import compute_step_reward
+    from .rewards.terminal_reward import compute_terminal_reward
+    from .tasks.outputs import get_output
+except ImportError:
+    from models import (
+        ConsultAction, ConsultObservation, ConsultState,
+        ScenarioSpec, ResourceUsage, ModuleOutput, StepRecord,
+        TeamComposition, RoleInfo, ModuleInfo,
+    )
+    from server.tasks.scenarios import SCENARIOS
+    from server.simulator.team import (
+        ROLES, OPTIONAL_ROLES, compute_team_cost,
+        compute_speed_multiplier, compute_quality_boost, get_role_infos,
+    )
+    from server.simulator.transition import execute_module, MODULES_BASE
+    from server.simulator.cascade import DEPENDENCIES
+    from server.rewards.step_reward import compute_step_reward
+    from server.rewards.terminal_reward import compute_terminal_reward
+    from server.tasks.outputs import get_output
 
 
-class ConsultEnvironment:
+class ConsultEnvEnvironment(Environment):
     """OpenEnv-compliant consulting engagement environment."""
+
+    SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
     def __init__(self):
         self._scenario_id = None
         self._state = None
+        self._openenv_state = State(episode_id=str(uuid4()), step_count=0)
 
     def set_scenario(self, scenario_id: str):
+        """Set scenario for next reset."""
         self._scenario_id = scenario_id
 
     def reset(self, scenario_id: str = None, seed: int = None) -> ConsultObservation:
         """Reset environment to initial state. Returns first observation."""
         if scenario_id:
             self._scenario_id = scenario_id
+        
+        if self._scenario_id is None:
+            self._scenario_id = "benchmarking_study"
 
         if self._scenario_id not in SCENARIOS:
             raise ValueError(f"Unknown scenario: {self._scenario_id}. Available: {list(SCENARIOS.keys())}")
@@ -59,14 +88,18 @@ class ConsultEnvironment:
             "done": False,
         }
 
+        self._openenv_state = State(episode_id=str(uuid4()), step_count=0)
+
         return self._build_observation(reward=0.0)
 
     def step(self, action: ConsultAction) -> ConsultObservation:
         """Execute one action. Returns updated observation."""
         if self._state is None:
-            raise RuntimeError("Environment not initialized. Call reset() first.")
+            self.reset()
         if self._state["done"]:
             raise RuntimeError("Episode is done. Call reset() to start a new episode.")
+
+        self._openenv_state.step_count += 1
 
         sc = self._state["scenario"]
         action_type = action.action_type
@@ -200,7 +233,7 @@ class ConsultEnvironment:
         self._state["step_rewards"].append(reward)
 
         # Store in pipeline history
-        self._state["pipeline_history"].append(StepResult(
+        self._state["pipeline_history"].append(StepRecord(
             module=module,
             output=mod_output,
             reward=reward,
@@ -215,10 +248,15 @@ class ConsultEnvironment:
 
         return self._build_observation(reward=reward)
 
-    def state(self) -> ConsultState:
+    @property
+    def state(self) -> State:
+        """OpenEnv state property."""
+        return self._openenv_state
+
+    def get_consult_state(self) -> ConsultState:
         """Return current internal state."""
         if self._state is None:
-            raise RuntimeError("No active episode.")
+            self.reset()
         sc = self._state["scenario"]
         total_cost = self._state["team_total_cost"] + self._state["external_costs"]
         return ConsultState(
