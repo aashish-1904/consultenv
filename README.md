@@ -357,8 +357,3 @@ Scores from `demo_run.py` using hardcoded near-optimal strategies:
 
 Note: Hard and Expert scores are penalized by timeline overruns (-0.5 and -0.2 respectively). An optimal agent using speed-boosting tools (alteryx, ai_assisted) could reduce overruns and push scores higher.
 
----
-
-## License
-
-MIT
