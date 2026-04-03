@@ -1,15 +1,3 @@
----
-title: ConsultEnv
-emoji: 📊
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 8000
-tags:
-  - openenv
-pinned: false
----
-
 # ConsultEnv — Consulting Engagement Planning Environment
 
 An OpenEnv-compliant reinforcement learning environment that simulates end-to-end consulting engagement management. An AI agent staffs teams, selects methodologies and tools, manages budgets and timelines, and delivers client work — with every decision producing deterministic outcomes scored on quality, profitability, and timeliness.
