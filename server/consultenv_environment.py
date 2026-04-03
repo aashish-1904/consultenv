@@ -17,7 +17,10 @@ try:
         ROLES, OPTIONAL_ROLES, compute_team_cost,
         compute_speed_multiplier, compute_quality_boost, get_role_infos,
     )
-    from .simulator.transition import execute_module, MODULES_BASE
+    from .simulator.transition import (
+        execute_module, MODULES_BASE, DATA_SOURCES, DM_TOOLS,
+        INSIGHT_METHODS, PRES_METHODS, WORKSHOP_FACILITATORS,
+    )
     from .simulator.cascade import DEPENDENCIES
     from .rewards.step_reward import compute_step_reward
     from .rewards.terminal_reward import compute_terminal_reward
@@ -33,11 +36,36 @@ except ImportError:
         ROLES, OPTIONAL_ROLES, compute_team_cost,
         compute_speed_multiplier, compute_quality_boost, get_role_infos,
     )
-    from server.simulator.transition import execute_module, MODULES_BASE
+    from server.simulator.transition import (
+        execute_module, MODULES_BASE, DATA_SOURCES, DM_TOOLS,
+        INSIGHT_METHODS, PRES_METHODS, WORKSHOP_FACILITATORS,
+    )
     from server.simulator.cascade import DEPENDENCIES
     from server.rewards.step_reward import compute_step_reward
     from server.rewards.terminal_reward import compute_terminal_reward
     from server.tasks.outputs import get_output
+
+
+def _get_module_params(module: str) -> dict:
+    """Return valid parameter options for a module so agents know what to pass."""
+    params = {"qc": {"type": "bool", "options": [True, False], "description": "Run quality check (+time, +quality)"}}
+    if module == "secondary":
+        params["method"] = {"type": "str", "options": ["in_house", "vendor", "partnership"], "description": "Research method"}
+        params["data_source"] = {"type": "str", "options": list(DATA_SOURCES.keys()), "description": "Data source (cost/quality tradeoff)"}
+    elif module == "benchmarking":
+        params["method"] = {"type": "str", "options": ["in_house", "vendor", "partnership"], "description": "Benchmarking method"}
+    elif module == "interviews":
+        params["interview_count"] = {"type": "int", "options": [2, 4, 6, 8, 10, 12, 15, 20], "description": "Number of interviews"}
+        params["senior_ratio"] = {"type": "float", "range": [0.0, 1.0], "description": "Ratio of senior interviewees (higher = better discovery chance)"}
+    elif module == "data_modelling":
+        params["tool"] = {"type": "str", "options": list(DM_TOOLS.keys()), "description": "Modelling tool"}
+    elif module == "insight_gen":
+        params["insight_method"] = {"type": "str", "options": list(INSIGHT_METHODS.keys()), "description": "Insight generation method"}
+    elif module == "presentation":
+        params["pres_method"] = {"type": "str", "options": list(PRES_METHODS.keys()), "description": "Presentation method"}
+    elif module == "workshops":
+        params["facilitator"] = {"type": "str", "options": list(WORKSHOP_FACILITATORS.keys()), "description": "Workshop facilitator type"}
+    return params
 
 
 class ConsultEnvEnvironment(Environment):
@@ -365,7 +393,7 @@ class ConsultEnvEnvironment(Environment):
             context=sc.get("context", ""),
         )
 
-        # Module infos
+        # Module infos with valid parameter options
         module_infos = []
         for mod in sc["modules_required"]:
             mb = MODULES_BASE.get(mod, {})
@@ -374,7 +402,8 @@ class ConsultEnvEnvironment(Environment):
                 bd = sc["workshop_base_override"]
             module_infos.append(ModuleInfo(
                 name=mod, base_days=bd, base_quality=mb.get("base_quality", 0),
-                description=f"Module: {mod}", available_parameters={},
+                description=f"Module: {mod}",
+                available_parameters=_get_module_params(mod),
             ))
 
         return ConsultObservation(

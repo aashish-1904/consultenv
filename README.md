@@ -1,3 +1,15 @@
+---
+title: ConsultEnv
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+tags:
+  - openenv
+pinned: false
+---
+
 # ConsultEnv — Consulting Engagement Planning Environment
 
 An OpenEnv-compliant reinforcement learning environment that simulates end-to-end consulting engagement management. An AI agent staffs teams, selects methodologies and tools, manages budgets and timelines, and delivers client work — with every decision producing deterministic outcomes scored on quality, profitability, and timeliness.
@@ -168,14 +180,14 @@ step_reward = (sequencing × 0.35) + (quality × 0.40) + (efficiency × 0.25) + 
 
 **Terminal Reward** (end of episode):
 ```
-terminal = (quality × 0.45) + (profit × 0.35) + (timeline × 0.20) + discovery_bonus + timeline_penalty
+terminal = (quality × 0.15) + (profit × 0.45) + (timeline × 0.40) + discovery_bonus + timeline_penalty
 ```
 
 | Component | Weight | Scoring |
 |-----------|--------|---------|
-| Quality | 45% | Avg quality. 1 fail = halved. 2+ fails = zeroed. |
-| Profit | 35% | Margin >35% = 1.0, 25-30% = 0.70, <10% = 0.0 |
-| Timeline | 20% | On time ≤90% = 1.0, on time 100% = 0.85, overrun = 0.30 |
+| Profit | 45% | Margin >35% = 1.0, 25-30% = 0.70, <10% = 0.0 |
+| Timeline | 40% | On time ≤90% = 1.0, on time 100% = 0.85, overrun = 0.30 |
+| Quality | 15% | Avg quality. 1 fail = halved. 2+ fails = zeroed. |
 | Discovery | +0.10 to +0.20 | Bonus for unlocking hidden findings |
 
 **Penalty escalation** (overruns hurt — a lot):
@@ -338,16 +350,17 @@ No existing OpenEnv environment covers consulting or professional services. This
 
 ## Baseline Scores
 
-Scores from `demo_run.py` using hardcoded near-optimal strategies:
+Scores from `demo_run.py` using hardcoded near-optimal strategies (normalized to 0.0–1.0):
 
 | Task | Score | Margin | Timeline | Discovery | Strategy |
 |------|-------|--------|----------|-----------|----------|
-| Benchmarking (Easy) | 1.626 | 46.2% | 15.0/15d | — | P+M+Ass, ibisworld |
-| Cost Optimization (Medium) | 1.824 | 35.5% | 24.1/25d | ✓ (+0.10) | P+M+AC+Ass, alteryx, AI insight |
-| Ops Transform (Hard) | 0.952 | 25.3% | 38.7/35d | — | P+M+AC+Ass, Coach+QC workshop |
-| CDD (Expert) | 1.373 | 14.0% | 32.9/30d | ✓ (+0.20) | P+M+E+C+AC+Ass, Coach workshop |
+| Benchmarking (Easy) | 0.897 | 46.2% | 15.0/15d | — | P+M+Ass, ibisworld |
+| Cost Optimization (Medium) | 0.947 | 35.5% | 24.1/25d | ✓ (+0.10) | P+M+AC+Ass, alteryx, AI insight |
+| Ops Transform (Hard) | 0.599 | 25.3% | 38.7/35d | — | P+M+AC+Ass, Coach+QC workshop |
+| CDD (Expert) | 0.717 | 14.0% | 32.9/30d | ✓ (+0.20) | P+M+E+C+AC+Ass, Coach workshop |
+| **Average** | **0.790** | | | | |
 
-Note: Hard and Expert scores are penalized by timeline overruns (-0.5 and -0.2 respectively). An optimal agent using speed-boosting tools (alteryx, ai_assisted) could reduce overruns and push scores higher.
+Note: Hard and Expert scores are penalized by timeline overruns. An optimal agent using speed-boosting tools (alteryx, ai_assisted) could reduce overruns and push scores higher.
 
 ---
 

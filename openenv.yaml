@@ -1,5 +1,6 @@
 spec_version: 1
 name: consultenv
+description: "Consulting engagement planning environment — staff teams, select methodologies, manage budgets/timelines, and deliver client work across 4 progressively harder scenarios."
 type: space
 runtime: fastapi
 app: server.app:app

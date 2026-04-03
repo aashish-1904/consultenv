@@ -2,7 +2,7 @@
 ConsultEnv Validator — Simulates what hackathon judges will check.
 
 Run against live server:
-    python validate.py                          # default localhost:7860
+    python validate.py                          # default localhost:8000
     python validate.py https://user-consultenv.hf.space   # against HF Space
 
 Checks:
@@ -23,7 +23,7 @@ import time
 
 # Can run in two modes: HTTP (against live server) or Direct (import environment)
 MODE = "direct"  # default
-BASE_URL = "http://localhost:7860"
+BASE_URL = "http://localhost:8000"
 
 if len(sys.argv) > 1:
     arg = sys.argv[1]

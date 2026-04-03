@@ -13,7 +13,7 @@ def compute_terminal_reward(
 ) -> dict:
     """Compute terminal reward at episode end.
     
-    terminal = (quality × 0.45) + (profit × 0.35) + (timeline × 0.20) + discovery
+    terminal = (quality × 0.15) + (profit × 0.45) + (timeline × 0.40) + discovery
     """
     # Count threshold failures
     below = sum(1 for mod, qual in module_qualities.items() 
@@ -57,7 +57,7 @@ def compute_terminal_reward(
     disc = discovery_bonus if discovery_found else 0.0
     
     # Terminal
-    terminal = (quality_score * 0.45) + (profit_score * 0.35) + (timeline_score * 0.20) + disc + timeline_penalty
+    terminal = (quality_score * 0.15) + (profit_score * 0.45) + (timeline_score * 0.40) + disc + timeline_penalty
 
     # Threshold failure escalation: quality zeroing alone isn't enough to
     # prevent "cheap garbage" strategies from scoring well on profit/timeline
