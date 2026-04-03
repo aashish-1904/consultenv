@@ -228,16 +228,17 @@ if __name__ == "__main__":
             sys.exit(1)
 
         print(f"ConsultEnv Inference | Model: {model_name} | Task: {task_id}")
-        score = run_task(env, task_id)
-
         print("[START]")
-        print(json.dumps({"task_id": task_id, "reward": round(score, 4)}))
+        print(json.dumps({"task_id": task_id}))
+        score = run_task(env, task_id, verbose=False)
         print("[END]")
+        print(json.dumps({"task_id": task_id, "reward": round(score, 4)}))
     else:
         # Run all tasks (for local testing: python inference.py --all)
         print(f"ConsultEnv Inference | Model: {model_name} | Running all {len(all_tasks)} tasks")
         for tid in all_tasks:
-            score = run_task(env, tid)
             print("[START]")
-            print(json.dumps({"task_id": tid, "reward": round(score, 4)}))
+            print(json.dumps({"task_id": tid}))
+            score = run_task(env, tid, verbose=False)
             print("[END]")
+            print(json.dumps({"task_id": tid, "reward": round(score, 4)}))

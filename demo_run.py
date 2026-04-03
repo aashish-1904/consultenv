@@ -121,7 +121,10 @@ def run_demo(scenario_id):
     print_separator()
     print(f"  {strategy['name']}")
     print_separator()
-    
+
+    print("[START]")
+    print(json.dumps({"task_id": scenario_id}))
+
     # Reset
     obs = env.reset(scenario_id)
     print(f"\n  Scenario: {obs.scenario.name}")
@@ -137,14 +140,23 @@ def run_demo(scenario_id):
     action = ConsultAction(action_type="staff_team", parameters=strategy["team"])
     print(f"\n  → ACTION: staff_team {strategy['team']}")
     obs = env.step(action)
+    obs_dict = obs.model_dump()
+    print("[STEP]")
+    print(json.dumps({"step": 0, "action_type": "staff_team", "parameters": strategy["team"], "reward": round(obs_dict["reward"], 4), "done": False}))
     print_observation(obs, "STEP 0: Staff Team")
-    
+
     # Execute modules
     for i, (module, params) in enumerate(strategy["modules"]):
         action = ConsultAction(action_type=module, parameters=params)
         param_str = ", ".join(f"{k}={v}" for k, v in params.items()) if params else "defaults"
         print(f"\n  → ACTION: {module}({param_str})")
         obs = env.step(action)
+        obs_dict = obs.model_dump()
+        step_log = {"step": i + 1, "action_type": module, "parameters": params, "reward": round(obs_dict["reward"], 4), "done": obs_dict["done"]}
+        if obs_dict.get("latest_output"):
+            step_log["quality"] = round(obs_dict["latest_output"].get("quality", 0), 4)
+        print("[STEP]")
+        print(json.dumps(step_log))
         print_observation(obs, f"STEP {i+1}: {module}")
     
     # Print final state
@@ -165,6 +177,9 @@ def run_demo(scenario_id):
     print(f"  Average step reward: {avg_step:.3f}")
     print(f"  TOTAL (normalized 0-1): {obs.total_reward:.3f}")
     
+    print("[END]")
+    print(json.dumps({"task_id": scenario_id, "reward": round(obs.total_reward, 4)}))
+
     print()
     return obs.total_reward
 
