@@ -14,12 +14,12 @@ from openai import OpenAI
 from models import ConsultAction
 from server.consultenv_environment import ConsultEnvEnvironment as ConsultEnvironment
 
-# Read config from env
+# Read config from env — defaults to HuggingFace router (no paid OpenAI key needed)
 client = OpenAI(
-    base_url=os.environ.get("API_BASE_URL", "https://api.openai.com/v1"),
-    api_key=os.environ.get("HF_TOKEN", os.environ.get("OPENAI_API_KEY", "")),
+    base_url=os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1"),
+    api_key=os.environ.get("HF_TOKEN"),
 )
-model_name = os.environ.get("MODEL_NAME", "gpt-3.5-turbo")
+model_name = os.environ.get("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
 
 SYSTEM_PROMPT = """You are an AI agent managing consulting engagements. You must make decisions about:
@@ -203,19 +203,28 @@ def _fallback_action(obs_dict: dict, task_id: str) -> ConsultAction:
 
 if __name__ == "__main__":
     env = ConsultEnvironment()
-    tasks = ["benchmarking_study", "cost_optimization", "ops_transformation", "commercial_due_diligence"]
-    
-    print("ConsultEnv Baseline Inference")
-    print(f"Model: {model_name}")
-    print(f"API: {os.environ.get('API_BASE_URL', 'default')}")
-    
-    scores = {}
-    for task_id in tasks:
+    all_tasks = ["benchmarking_study", "cost_optimization", "ops_transformation", "commercial_due_diligence"]
+
+    # Single task mode: TASK_ID env var or first CLI arg
+    task_id = os.environ.get("TASK_ID", sys.argv[1] if len(sys.argv) > 1 else None)
+
+    if task_id and task_id != "--all":
+        # Single task execution (expected by evaluation system)
+        if task_id not in all_tasks:
+            print(f"Unknown task: {task_id}. Available: {all_tasks}")
+            sys.exit(1)
+
+        print(f"ConsultEnv Inference | Model: {model_name} | Task: {task_id}")
         score = run_task(env, task_id)
-        scores[task_id] = score
-    
-    print(f"\n{'='*60}")
-    print("RESULTS:")
-    for task_id, score in scores.items():
-        print(f"  {task_id}: {score:.3f}")
-    print(f"  AVERAGE: {sum(scores.values())/len(scores):.3f}")
+
+        print("[START]")
+        print(json.dumps({"task_id": task_id, "reward": round(score, 4)}))
+        print("[END]")
+    else:
+        # Run all tasks (for local testing: python inference.py --all)
+        print(f"ConsultEnv Inference | Model: {model_name} | Running all {len(all_tasks)} tasks")
+        for tid in all_tasks:
+            score = run_task(env, tid)
+            print("[START]")
+            print(json.dumps({"task_id": tid, "reward": round(score, 4)}))
+            print("[END]")

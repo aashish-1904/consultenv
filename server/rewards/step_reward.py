@@ -29,7 +29,12 @@ def compute_step_reward(
     
     # Quality
     qual_score = final_quality
-    thresh_penalty = -0.1 if final_quality < threshold else 0.0
+    # Scale threshold penalty by how far below threshold (bigger miss = harsher penalty)
+    if final_quality < threshold:
+        deficit = threshold - final_quality
+        thresh_penalty = -0.1 * (1 + deficit * 2)
+    else:
+        thresh_penalty = 0.0
     
     # Efficiency
     modules_done_ratio = (step_index + 1) / total_modules

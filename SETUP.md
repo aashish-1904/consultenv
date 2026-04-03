@@ -18,30 +18,30 @@ python3 test_integration.py
 
 ```bash
 docker build -t consultenv .
-docker run -p 7860:7860 consultenv
+docker run -p 8000:8000 consultenv
 ```
 
-Server starts at `http://localhost:7860`
+Server starts at `http://localhost:8000`
 
 ## Step 4: Test API (new terminal)
 
 ```bash
 # Health
-curl http://localhost:7860/health
+curl http://localhost:8000/health
 
 # Reset
-curl -X POST http://localhost:7860/reset \
+curl -X POST http://localhost:8000/reset \
   -H "Content-Type: application/json" \
   -d '{"scenario_id": "benchmarking_study"}'
 
 # Staff team
-curl -X POST http://localhost:7860/step \
+curl -X POST http://localhost:8000/step \
   -H "Content-Type: application/json" \
   -d '{"action": {"action_type": "staff_team", "parameters": {"associate": true}}}'
 
 # Run all 4 modules
 for mod in secondary benchmarking insight_gen presentation; do
-  curl -s -X POST http://localhost:7860/step \
+  curl -s -X POST http://localhost:8000/step \
     -H "Content-Type: application/json" \
     -d "{\"action\": {\"action_type\": \"$mod\", \"parameters\": {}}}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'  {d.get(\"latest_output\",{}).get(\"module\",\"?\")}:  q={d.get(\"latest_output\",{}).get(\"quality\",0):.3f}  done={d[\"done\"]}  reward={d[\"reward\"]:.3f}')"
 done
@@ -53,7 +53,7 @@ done
 python3 -c "
 import sys; sys.path.insert(0, '.')
 from models import ConsultAction
-from server.environment import ConsultEnvironment
+from server.consultenv_environment import ConsultEnvEnvironment as ConsultEnvironment
 
 env = ConsultEnvironment()
 configs = {

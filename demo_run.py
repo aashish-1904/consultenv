@@ -161,17 +161,15 @@ def run_demo(scenario_id):
     print(f"\n  REWARD BREAKDOWN:")
     step_rewards = state.step_rewards
     avg_step = sum(step_rewards) / len(step_rewards) if step_rewards else 0
-    terminal = obs.total_reward - avg_step
     print(f"  Step rewards: {[round(r, 3) for r in step_rewards]}")
-    print(f"  Average step: {avg_step:.3f}")
-    print(f"  Terminal: {terminal:.3f}")
-    print(f"  TOTAL: {obs.total_reward:.3f}")
+    print(f"  Average step reward: {avg_step:.3f}")
+    print(f"  TOTAL (normalized 0-1): {obs.total_reward:.3f}")
     
     print()
     return obs.total_reward
 
 
-def run_demo_http(scenario_id, base_url="http://localhost:7860"):
+def run_demo_http(scenario_id, base_url="http://localhost:8000"):
     """Run demo via HTTP API (when server is running)."""
     import requests
     

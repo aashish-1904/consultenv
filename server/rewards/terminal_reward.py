@@ -58,7 +58,14 @@ def compute_terminal_reward(
     
     # Terminal
     terminal = (quality_score * 0.45) + (profit_score * 0.35) + (timeline_score * 0.20) + disc + timeline_penalty
-    
+
+    # Threshold failure escalation: quality zeroing alone isn't enough to
+    # prevent "cheap garbage" strategies from scoring well on profit/timeline
+    if below >= 2:
+        terminal += -0.10 * below
+    elif below == 1:
+        terminal += -0.05
+
     # Budget nuclear — goes NEGATIVE, not just zero
     if budget_exceeded:
         terminal = -0.5

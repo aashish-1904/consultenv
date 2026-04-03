@@ -45,6 +45,16 @@ class ConsultEnvEnvironment(Environment):
 
     SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
+    # Normalization bounds: maps raw total score to [0, 1] for grader compliance
+    _RAW_MIN = -1.0   # worst case: bad steps + severe timeline/budget penalty
+    _RAW_MAX = 2.0    # best case: perfect steps + full terminal + discovery bonus
+
+    @staticmethod
+    def _normalize_total(raw: float) -> float:
+        """Normalize raw episode total to [0, 1] for grader output."""
+        return max(0.0, min(1.0, (raw - ConsultEnvEnvironment._RAW_MIN) /
+                            (ConsultEnvEnvironment._RAW_MAX - ConsultEnvEnvironment._RAW_MIN)))
+
     def __init__(self):
         self._scenario_id = None
         self._state = None
@@ -329,12 +339,16 @@ class ConsultEnvEnvironment(Environment):
                 discovery_bonus=sc["discovery_bonus"],
                 budget_exceeded=budget_exceeded,
             )
-            # Total = avg(step_rewards) + terminal
+            # Total = avg(step_rewards) + terminal, then normalize to [0, 1]
             step_rews = [r for r in self._state["step_rewards"]]
             avg_step = sum(step_rews) / len(step_rews) if step_rews else 0
-            total_reward = avg_step + term["terminal_reward"]
+            raw_total = avg_step + term["terminal_reward"]
+            total_reward = self._normalize_total(raw_total)
         else:
-            total_reward = sum(self._state["step_rewards"])
+            # During episode: average of step rewards, clamped to [0, 1]
+            step_rews = self._state["step_rewards"]
+            avg = sum(step_rews) / len(step_rews) if step_rews else 0
+            total_reward = max(0.0, min(1.0, avg))
 
         # Latest output
         latest = self._state["pipeline_history"][-1].output if self._state["pipeline_history"] else None
@@ -376,6 +390,6 @@ class ConsultEnvEnvironment(Environment):
             key_findings=self._state["key_findings"],
             discovery_found=self._state["discovery_found"],
             done=self._state["done"],
-            reward=reward,
+            reward=round(max(0.0, min(1.0, reward)), 4),
             total_reward=round(total_reward, 4),
         )

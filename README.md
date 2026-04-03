@@ -242,7 +242,7 @@ total = average(per_step_rewards) + terminal_reward
 | `step(action)` → observation + reward | ✅ Returns typed observation with reward breakdown |
 | `state()` → internal state | ✅ Full serializable state |
 | FastAPI HTTP endpoints | ✅ POST /reset, POST /step, GET /state, GET /health |
-| Dockerfile | ✅ python:3.11-slim, port 7860 |
+| Dockerfile | ✅ python:3.11-slim, port 8000 |
 | `inference.py` in root | ✅ OpenAI client, env vars, fallback heuristics |
 | Deterministic grading | ✅ Same inputs = same outputs, always |
 | 0.0-1.0 grader range | ✅ Per-step and terminal scores bounded (terminal can go negative as penalty) |
@@ -265,8 +265,8 @@ consultenv/
 ├── requirements.txt          # fastapi, uvicorn, pydantic, openai
 ├── models.py                 # Typed models (works with or without pydantic)
 ├── server/
-│   ├── app.py                # FastAPI server (port 7860)
-│   ├── environment.py        # Main environment class
+│   ├── app.py                # FastAPI server (port 8000)
+│   ├── consultenv_environment.py  # Main environment class
 │   ├── simulator/
 │   │   ├── transition.py     # Module execution engine (all parameters)
 │   │   ├── team.py           # Team multiplier calculations
@@ -306,10 +306,14 @@ python server/app.py
 # Run demo via HTTP API
 python demo_run.py --http
 
-# Run with LLM inference
-export API_BASE_URL=https://api.openai.com/v1
-export MODEL_NAME=gpt-3.5-turbo
-export HF_TOKEN=your_key
+# Run with LLM inference (uses HuggingFace router by default)
+export HF_TOKEN=hf_your_token
+python inference.py
+
+# Or with custom model/endpoint
+export API_BASE_URL=https://router.huggingface.co/v1
+export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
+export HF_TOKEN=hf_your_token
 python inference.py
 
 # Run integration tests
@@ -357,3 +361,8 @@ Scores from `demo_run.py` using hardcoded near-optimal strategies:
 
 Note: Hard and Expert scores are penalized by timeline overruns (-0.5 and -0.2 respectively). An optimal agent using speed-boosting tools (alteryx, ai_assisted) could reduce overruns and push scores higher.
 
+---
+
+## License
+
+MIT
