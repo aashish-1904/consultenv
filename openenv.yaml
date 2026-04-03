@@ -21,4 +21,4 @@ tasks:
   - id: commercial_due_diligence
     name: "Commercial Due Diligence"
     description: "Validate acquisition target for PE fund. 7 modules, 30-day timeline, industry expert + agile coach required."
-    difficulty: hard
+    difficulty: expert

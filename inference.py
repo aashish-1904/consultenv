@@ -147,6 +147,19 @@ def run_task(env: ConsultEnvironment, task_id: str, verbose: bool = True) -> flo
             obs = env.step(action)
             obs_dict = obs.model_dump()
         
+        # Structured step log for evaluation system
+        step_log = {
+            "step": step,
+            "action_type": action.action_type,
+            "parameters": action.parameters,
+            "reward": round(obs_dict["reward"], 4),
+            "done": obs_dict["done"],
+        }
+        if action.action_type != "staff_team" and obs_dict.get("latest_output"):
+            step_log["quality"] = round(obs_dict["latest_output"].get("quality", 0), 4)
+        print("[STEP]")
+        print(json.dumps(step_log))
+
         if verbose:
             if action.action_type == "staff_team":
                 print(f"  Step {step}: staff_team → {action.parameters}")
